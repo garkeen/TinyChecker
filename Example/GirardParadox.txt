@@ -1,0 +1,55 @@
+# Fixed target.  Change Bool to Empty/Nat/etc. and the same construction
+# targets that type instead.
+inductive Bool {
+  | true: Bool
+  | false: Bool
+};
+
+X : Type,
+X = Bool;
+
+# Bad inductive packaging for the Girard-shaped payload.
+inductive Box {
+  | pack: ((Box -> Type) -> Type) -> Box
+};
+
+unpack : Box -> ((Box -> Type) -> Type),
+unpack b =
+  match b
+  in Box
+  return (Box -> Type) -> Type
+  with
+  | pack content => content
+  end;
+
+repack : Box -> Box,
+repack b = pack (unpack b);
+
+self : Box,
+self = pack (\(p:Box -> Type) => (b:Box) -> unpack b p -> p b);
+# this is the key construction,
+# pack arg expect type (Box → Type₀) → Type₀, 
+# but (\(p:Box -> Type) => (b:Box) -> unpack b p -> p b) has type (Box → Type₀) → Type₁
+# in this type in type universe,this is allowed.
+
+# The target is reduced to:
+#   a : A
+#   f : A -> X
+#   target = f a
+A : Type,
+A = (p:Box -> Type) -> unpack self p -> p (repack self);
+
+a : (p:Box -> Type) -> unpack self p -> p (repack self),
+a p hp = hp self hp;
+
+R : Box -> Type,
+R b = ((p:Box -> Type) -> unpack b p -> p (repack b)) -> X;
+
+r :(b:Box) -> unpack b R ->((p:Box -> Type) -> unpack b p -> p (repack b)) ->X,
+r b hb s = s R hb (\(p:Box -> Type) => \(hp:unpack (repack b) p) => s p hp);
+
+f : A -> X,
+f x = (x R r) x;
+
+target : X,
+target = f a;

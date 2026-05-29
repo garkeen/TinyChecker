@@ -1,0 +1,25 @@
+# Minimal nested existential test.
+
+inductive Exists (A:Type) (P:(x:A) -> Type) {
+  | ex: (x:A) -> P x -> Exists A P
+};
+
+sum A {
+  | a0: A
+};
+
+sum B {
+  | b0: B
+};
+
+inductive P: A -> B -> Type {
+  | p00: P a0 b0
+};
+
+claim nestedWitness:
+  Exists A (\(x:A) => Exists B (\(y:B) => P x y)) =
+  ex
+    A
+    (\(x:A) => Exists B (\(y:B) => P x y))
+    a0
+    (ex B (\(y:B) => P a0 y) b0 p00);

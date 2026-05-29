@@ -1,0 +1,6 @@
+文件：Example/ExistsNested.txt
+
+断言 nestedWitness: ∃ x : A，∃ y : B，P x y
+  引理 1: ∃ y : B，P a0 y
+    给出存在见证（∃I） ex B (P a0) b0 p00
+  给出存在见证（∃I） ex A (\(x:A) => ∃ y : B，P x y) a0 引理 1

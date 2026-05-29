@@ -1,0 +1,148 @@
+# Intuitionistic first-order logic playground.
+# forall is encoded by dependent function types.
+# exists is encoded by an inductive family Exists.
+
+inductive Empty {};
+
+inductive Unit {
+  | unit: Unit
+};
+
+inductive And (A:Type) (B:Type) {
+  | pair: A -> B -> And A B
+};
+
+inductive Or (A:Type) (B:Type) {
+  | inl: A -> Or A B
+  | inr: B -> Or A B
+};
+
+inductive Exists (A:Type) (P:(x:A) -> Type) {
+  | ex: (x:A) -> P x -> Exists A P
+};
+
+
+# A /\ B -> A.
+theorem andLeft (A:Type) (B:Type) (ab:And A B): A {
+  match ab
+  in And A B bind X Y
+  return X
+  with
+  | pair x y => x
+  end
+};
+
+# A /\ B -> B.
+theorem andRight (A:Type) (B:Type) (ab:And A B): B {
+  match ab
+  in And A B bind X Y
+  return Y
+  with
+  | pair x y => y
+  end
+};
+
+# forall x, P x  ->  P a.
+theorem forallElim (A:Type) (P:(x:A) -> Type) (f:(x:A) -> P x) (a:A): P a {
+  f a
+};
+
+# (forall x, P x /\ Q x) -> (forall x, P x) /\ (forall x, Q x).
+theorem forallAndToAndForall
+  (A:Type)
+  (P:(x:A) -> Type)
+  (Q:(x:A) -> Type)
+  (h:(x:A) -> And (P x) (Q x)):
+  And ((x:A) -> P x) ((x:A) -> Q x) {
+  pair
+    ((x:A) -> P x)
+    ((x:A) -> Q x)
+    (\(x:A) => andLeft (P x) (Q x) (h x))
+    (\(x:A) => andRight (P x) (Q x) (h x))
+};
+
+# Existential introduction.
+theorem existsIntro (A:Type) (P:(x:A) -> Type) (a:A) (pa:P a): Exists A P {
+  ex A P a pa
+};
+
+# Existential elimination.
+theorem existsElim
+  (A:Type)
+  (P:(x:A) -> Type)
+  (R:Type)
+  (e:Exists A P)
+  (k:(x:A) -> P x -> R):
+  R {
+  (match e
+   in Exists A P bind X Y
+   return ((x:X) -> Y x -> R) -> R
+   with
+   | ex x px => \(kk:(x:X) -> Y x -> R) => kk x px
+   end)
+  k
+};
+
+# Map witnesses along implication: (forall x, P x -> Q x) -> Exists A P -> Exists A Q.
+theorem existsMap
+  (A:Type)
+  (P:(x:A) -> Type)
+  (Q:(x:A) -> Type)
+  (h:(x:A) -> P x -> Q x)
+  (e:Exists A P):
+  Exists A Q {
+  existsElim
+    A
+    P
+    (Exists A Q)
+    e
+    (\(x:A) => \(px:P x) => ex A Q x (h x px))
+};
+
+# ~(Exists x, P x) -> forall x, ~(P x).
+theorem notExistsToForallNot
+  (A:Type)
+  (P:(x:A) -> Type)
+  (notEx:Exists A P -> Empty)
+  (a:A)
+  (pa:P a):
+  Empty {
+  notEx (ex A P a pa)
+};
+
+# (forall x, ~(P x)) -> ~(Exists x, P x).
+theorem forallNotToNotExists
+  (A:Type)
+  (P:(x:A) -> Type)
+  (hn:(x:A) -> P x -> Empty)
+  (e:Exists A P):
+  Empty {
+  existsElim A P Empty e (\(x:A) => \(px:P x) => hn x px)
+};
+
+
+# Concrete domain and predicate instances for normalization checks.
+sum Person {
+  | alice: Person
+  | bob: Person
+};
+
+inductive LikesAlice: Person -> Type {
+  | likesAlicePf: LikesAlice alice
+};
+
+inductive LikesBob: Person -> Type {
+  | likesBobPf: LikesBob bob
+};
+
+claim witnessAlice: Exists Person LikesAlice =
+  ex Person LikesAlice alice likesAlicePf;
+
+claim mappedWitness:
+  Exists Person (\(x:Person) => Or (LikesAlice x) (LikesAlice x)) =
+  existsMap
+    Person
+    LikesAlice
+    (\(x:Person) => Or (LikesAlice x) (LikesAlice x))
+    (\(x:Person) => \(px:LikesAlice x) => inl (LikesAlice x) (LikesAlice x) px)
+    witnessAlice;

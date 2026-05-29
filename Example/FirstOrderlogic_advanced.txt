@@ -1,0 +1,141 @@
+# Focused stress tests for existential/disjunction distribution.
+# Goal: locate weak points in elaboration/conversion checking.
+
+inductive Empty {};
+
+inductive Unit {
+  | unit: Unit
+};
+
+inductive Or (A:Type) (B:Type) {
+  | inl: A -> Or A B
+  | inr: B -> Or A B
+};
+
+inductive Exists (A:Type) (P:(x:A) -> Type) {
+  | ex: (x:A) -> P x -> Exists A P
+};
+
+# ------------------------------------------------------------
+# Layer 1: non-dependent payload in Or (constant predicates)
+# ------------------------------------------------------------
+
+# Exists x, (P \/ Q) -> (Exists x, P) \/ (Exists x, Q)
+theorem existsOrToOrExists_const
+  (A:Type)
+  (P:Type)
+  (Q:Type)
+  (e:Exists A (\(x:A) => Or P Q)):
+  Or (Exists A (\(x:A) => P)) (Exists A (\(x:A) => Q)) {
+  match e
+  in Exists A (\(x:A) => Or P Q) bind A0 P0
+  return Or (Exists A (\(x:A) => P)) (Exists A (\(x:A) => Q))
+  with
+  | ex x pq =>
+      match pq
+      in Or P Q bind L R
+      return Or (Exists A (\(x:A) => P)) (Exists A (\(x:A) => Q))
+      with
+      | inl px => inl (Exists A (\(x:A) => P)) (Exists A (\(x:A) => Q)) (ex A (\(z:A) => P) x px)
+      | inr qx => inr (Exists A (\(x:A) => P)) (Exists A (\(x:A) => Q)) (ex A (\(z:A) => Q) x qx)
+      end
+  end
+};
+
+# (Exists x, P) \/ (Exists x, Q) -> Exists x, (P \/ Q)
+theorem orExistsToExistsOr_const
+  (A:Type)
+  (P:Type)
+  (Q:Type)
+  (o:Or (Exists A (\(x:A) => P)) (Exists A (\(x:A) => Q))):
+  Exists A (\(x:A) => Or P Q) {
+  match o
+  in Or (Exists A (\(x:A) => P)) (Exists A (\(x:A) => Q)) bind EL ER
+  return Exists A (\(x:A) => Or P Q)
+  with
+  | inl ep =>
+      match ep
+      in Exists A (\(x:A) => P) bind A1 P1
+      return Exists A (\(x:A) => Or P Q)
+      with
+      | ex x px => ex A (\(z:A) => Or P Q) x (inl P Q px)
+      end
+  | inr eq =>
+      match eq
+      in Exists A (\(x:A) => Q) bind A2 P2
+      return Exists A (\(x:A) => Or P Q)
+      with
+      | ex x qx => ex A (\(z:A) => Or P Q) x (inr P Q qx)
+      end
+  end
+};
+
+# ------------------------------------------------------------
+# Layer 2: dependent predicates in Or (P x, Q x)
+# ------------------------------------------------------------
+
+# Exists x, (P x \/ Q x) -> (Exists x, P x) \/ (Exists x, Q x)
+theorem existsOrToOrExists_dep
+  (A:Type)
+  (P:(x:A) -> Type)
+  (Q:(x:A) -> Type)
+  (e:Exists A (\(x:A) => Or (P x) (Q x))):
+  Or (Exists A P) (Exists A Q) {
+  match e
+  in Exists A (\(x:A) => Or (P x) (Q x)) bind A0 P0
+  return Or (Exists A P) (Exists A Q)
+  with
+  | ex x pq =>
+      match pq
+      in Or (P x) (Q x) bind L R
+      return Or (Exists A P) (Exists A Q)
+      with
+      | inl px => inl (Exists A P) (Exists A Q) (ex A P x px)
+      | inr qx => inr (Exists A P) (Exists A Q) (ex A Q x qx)
+      end
+  end
+};
+
+# (Exists x, P x) \/ (Exists x, Q x) -> Exists x, (P x \/ Q x)
+theorem orExistsToExistsOr_dep
+  (A:Type)
+  (P:(x:A) -> Type)
+  (Q:(x:A) -> Type)
+  (o:Or (Exists A P) (Exists A Q)):
+  Exists A (\(x:A) => Or (P x) (Q x)) {
+  match o
+  in Or (Exists A P) (Exists A Q) bind EL ER
+  return Exists A (\(x:A) => Or (P x) (Q x))
+  with
+  | inl ep =>
+      match ep
+      in Exists A P bind A1 P1
+      return Exists A (\(x:A) => Or (P x) (Q x))
+      with
+      | ex x px =>
+          ex A (\(z:A) => Or (P z) (Q z)) x (inl (P x) (Q x) px)
+      end
+  | inr eq =>
+      match eq
+      in Exists A Q bind A2 P2
+      return Exists A (\(x:A) => Or (P x) (Q x))
+      with
+      | ex x qx =>
+          ex A (\(z:A) => Or (P z) (Q z)) x (inr (P x) (Q x) qx)
+      end
+  end
+};
+
+
+# Smoke inputs
+sum Two {
+  | t0: Two
+  | t1: Two
+};
+
+claim c_exists_pq: Exists Two (\(x:Two) => Or Unit Unit) =
+  ex Two (\(x:Two) => Or Unit Unit) t0 (inl Unit Unit unit);
+
+claim c_split_const:
+  Or (Exists Two (\(x:Two) => Unit)) (Exists Two (\(x:Two) => Unit)) =
+  existsOrToOrExists_const Two Unit Unit c_exists_pq;

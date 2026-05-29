@@ -1,0 +1,436 @@
+# Sort workbench
+# Goal: freeze the interfaces first, then implement incrementally.
+
+inductive Empty {};
+
+inductive Or (P:Type) (Q:Type) {
+  | inl: P -> Or P Q
+  | inr: Q -> Or P Q
+};
+
+inductive Nat {
+  | zero: Nat
+  | succ: Nat -> Nat
+};
+
+inductive Eq (A:Type): A -> A -> Type {
+  | refl: (x:A) -> Eq A x x
+};
+
+theorem eqSym (A:Type) (x:A) (y:A) (p:[A]x==y): [A]y==x {
+  match p as e in Eq A x y bind T rhs lhs
+  return [T]lhs==rhs with
+  | refl z => refl T z
+  end
+};
+
+theorem eqTrans (A:Type) (x:A) (y:A) (z:A) (p:[A]x==y) (q:[A]y==z): [A]x==z {
+  (match p as e in Eq A x y bind T lhs mid
+   return (z:T) -> ([T]mid==z) -> [T]lhs==z with
+   | refl w => \(z:T) => \(q:[T]w==z) => q
+   end)
+  z
+  q
+};
+
+theorem eqCong (A:Type) (x:A) (y:A) (p:[A]x==y) (B:Type) (f:A -> B): [B](f x)==(f y) {
+  (match p as e in Eq A x y bind T lhs rhs
+   return (R:Type) -> (g:T -> R) -> [R](g lhs)==(g rhs) with
+   | refl z => \(R:Type) => \(g:T -> R) => refl R (g z)
+   end)
+  B
+  f
+};
+
+theorem eqCongSucc (x:Nat) (y:Nat) (p:[Nat]x==y): [Nat](succ x)==(succ y) {
+  eqCong Nat x y p Nat (\(n:Nat) => succ n)
+};
+
+inductive List (A:Type): Nat -> Type {
+  | nil: List A zero
+  | cons: (k:Nat) -> A -> List A k -> List A (succ k)
+};
+
+# Base order relation on Nat.
+inductive Le : Nat -> Nat -> Type {
+  | leRefl: (n:Nat) -> Le n n
+  | leStep: (m:Nat) -> (n:Nat) -> Le m n -> Le m (succ n)
+};
+
+# Derived order aliases.
+var Lt : Nat -> Nat -> Type = \(a:Nat) => \(b:Nat) => Le (succ a) b;
+var Ge : Nat -> Nat -> Type = \(a:Nat) => \(b:Nat) => Le b a;
+var Gt : Nat -> Nat -> Type = \(a:Nat) => \(b:Nat) => Le (succ b) a;
+
+# x <= every element in xs.
+inductive NList : Nat -> Type {
+  | nnil: NList zero
+  | ncons: (k:Nat) -> Nat -> NList k -> NList (succ k)
+};
+
+# x <= every element in xs.
+inductive AllLe (x:Nat): (n:Nat) -> NList n -> Type {
+  | allLeNil: AllLe x zero nnil
+  | allLeCons: (k:Nat) -> (y:Nat) -> (ys:NList k) ->
+             Le x y ->
+             AllLe x k ys ->
+             AllLe x (succ k) (ncons k y ys)
+};
+
+# Sorted list predicate.
+inductive Sorted : (n:Nat) -> NList n -> Type {
+  | sortedNil: Sorted zero nnil
+  | sortedCons: (k:Nat) -> (x:Nat) -> (ys:NList k) ->
+              AllLe x k ys ->
+              Sorted k ys ->
+              Sorted (succ k) (ncons k x ys)
+};
+
+theorem leZeroAny (n:Nat): Le zero n {
+  match n as k in Nat
+  return Le zero k
+  with
+  | zero => leRefl zero
+  | succ k [ih] => leStep zero k ih
+  end
+};
+
+theorem leSuccSucc (m:Nat) (n:Nat) (p:Le m n): Le (succ m) (succ n) {
+  match p as q in Le m n bind lhs rhs
+  return Le (succ lhs) (succ rhs)
+  with
+  | leRefl t => leRefl (succ t)
+  | leStep l r pr [ih] => leStep (succ l) (succ r) ih
+  end
+};
+
+inductive Cmp (a:Nat) (b:Nat) {
+  | cmpLe: Le a b -> Cmp a b
+  | cmpGe: Le b a -> Cmp a b
+};
+
+fun compare (a:Nat) (b:Nat): Cmp a b {
+  (match a as x in Nat
+   return (b:Nat) -> Cmp x b
+   with
+   | zero => \(b:Nat) => cmpLe zero b (leZeroAny b)
+   | succ k [ih] => \(b:Nat) =>
+      match b as y in Nat
+      return Cmp (succ k) y
+      with
+      | zero => cmpGe (succ k) zero (leZeroAny (succ k))
+      | succ j [ihb] =>
+         (match (ih j) in Cmp k j bind X Y
+          return (Le X Y -> Cmp (succ k) (succ j)) ->
+                 (Le Y X -> Cmp (succ k) (succ j)) ->
+                 Cmp (succ k) (succ j)
+          with
+          | cmpLe p =>
+             \(fxy:Le X Y -> Cmp (succ k) (succ j)) =>
+             \(fyx:Le Y X -> Cmp (succ k) (succ j)) =>
+             fxy p
+          | cmpGe q =>
+             \(fxy:Le X Y -> Cmp (succ k) (succ j)) =>
+             \(fyx:Le Y X -> Cmp (succ k) (succ j)) =>
+             fyx q
+          end)
+         (\(p:Le k j) => cmpLe (succ k) (succ j) (leSuccSucc k j p))
+         (\(q:Le j k) => cmpGe (succ k) (succ j) (leSuccSucc j k q))
+      end
+   end)
+  b
+};
+
+theorem leTrans (a:Nat) (b:Nat) (c:Nat) (p:Le a b) (q:Le b c): Le a c {
+  (match q as q0 in Le b c bind mid top
+   return Le a mid -> Le a top
+   with
+   | leRefl t => \(p0:Le a t) => p0
+   | leStep l r qr [ih] => \(p0:Le a l) => leStep a r (ih p0)
+   end)
+  p
+};
+
+fun insert (x:Nat) (n:Nat) (xs:NList n): NList (succ n) {
+  match xs as s in NList n bind m
+  return NList (succ m)
+  with
+  | nnil => ncons zero x nnil
+  | ncons k y ys [ih] =>
+     (match compare x y in Cmp x y bind L R
+      return NList (succ (succ k))
+      with
+      | cmpLe p => ncons (succ k) x (ncons k y ys)
+      | cmpGe q => ncons (succ k) y ih
+      end)
+  end
+};
+
+fun insertionSort (n:Nat) (xs:NList n): NList n {
+  match xs as s in NList n bind m
+  return NList m
+  with
+  | nnil => nnil
+  | ncons k y ys [ih] => insert y k ih
+  end
+};
+
+theorem allLeTransLeft (x:Nat) (y:Nat) (n:Nat) (ys:NList n) (hxy:Le x y) (hy:AllLe y n ys): AllLe x n ys {
+  (match hy as h in AllLe y n ys bind base m zs
+   return Le x base -> AllLe x m zs
+   with
+   | allLeNil => \(p:Le x base) => allLeNil x
+   | allLeCons k z zs h1 h2 [ih] =>
+      \(p:Le x base) => allLeCons x k z zs (leTrans x base z p h1) (ih p)
+   end)
+  hxy
+};
+
+theorem insert_nil_eq (x:Nat): [NList (succ zero)](insert x zero nnil)==(ncons zero x nnil) {
+  refl (NList (succ zero)) (ncons zero x nnil)
+};
+
+theorem insert_cons_eq (x:Nat) (k:Nat) (y:Nat) (ys:NList k):
+  [NList (succ (succ k))]
+  (insert x (succ k) (ncons k y ys))
+  ==
+  (match compare x y in Cmp x y bind L R
+   return NList (succ (succ k))
+   with
+   | cmpLe p => ncons (succ k) x (ncons k y ys)
+   | cmpGe q => ncons (succ k) y (insert x k ys)
+   end)
+{
+  refl
+    (NList (succ (succ k)))
+    (match compare x y in Cmp x y bind L R
+     return NList (succ (succ k))
+     with
+     | cmpLe p => ncons (succ k) x (ncons k y ys)
+     | cmpGe q => ncons (succ k) y (insert x k ys)
+     end)
+};
+
+theorem insertionSort_nil_eq: [NList zero](insertionSort zero nnil)==nnil {
+  refl (NList zero) nnil
+};
+
+theorem insertionSort_cons_eq (k:Nat) (y:Nat) (ys:NList k):
+  [NList (succ k)]
+  (insertionSort (succ k) (ncons k y ys))
+  ==
+  (insert y k (insertionSort k ys))
+{
+  refl (NList (succ k)) (insert y k (insertionSort k ys))
+};
+
+theorem eqTransport (A:Type) (x:A) (y:A) (p:[A]x==y) (P:A -> Type) (px:P x): P y {
+  ((match p as e in Eq A x y bind T lhs rhs
+    return (P:T -> Type) -> P lhs -> P rhs
+    with
+    | refl z => \(P:T -> Type) => \(px:P z) => px
+    end)
+   P)
+  px
+};
+
+theorem allLe_congr (h:Nat) (n:Nat) (xs:NList n) (ys:NList n) (p:[NList n]xs==ys) (hx:AllLe h n xs): AllLe h n ys {
+  eqTransport (NList n) xs ys p (\(t:NList n) => AllLe h n t) hx
+};
+
+theorem sorted_congr (n:Nat) (xs:NList n) (ys:NList n) (p:[NList n]xs==ys) (hs:Sorted n xs): Sorted n ys {
+  eqTransport (NList n) xs ys p (\(t:NList n) => Sorted n t) hs
+};
+
+theorem congr_ncons_tail (k:Nat) (x:Nat) (xs:NList k) (ys:NList k) (p:[NList k]xs==ys):
+  [NList (succ k)](ncons k x xs)==(ncons k x ys) {
+  eqCong (NList k) xs ys p (NList (succ k)) (\(t:NList k) => ncons k x t)
+};
+
+theorem congr_insert_tail (x:Nat) (k:Nat) (xs:NList k) (ys:NList k) (p:[NList k]xs==ys):
+  [NList (succ k)](insert x k xs)==(insert x k ys) {
+  eqCong (NList k) xs ys p (NList (succ k)) (\(t:NList k) => insert x k t)
+};
+
+theorem allLeInsert (h:Nat) (x:Nat) (n:Nat) (xs:NList n):
+  Le h x -> AllLe h n xs -> AllLe h (succ n) (insert x n xs) {
+  \(hx:Le h x) => \(hall:AllLe h n xs) =>
+  (match hall as a in AllLe h n xs bind head m ys
+   return Le head x -> AllLe head (succ m) (insert x m ys)
+   with
+   | allLeNil =>
+      \(p:Le head x) =>
+      allLe_congr
+        head
+        (succ zero)
+        (ncons zero x nnil)
+        (insert x zero nnil)
+        (eqSym (NList (succ zero))
+          (insert x zero nnil)
+          (ncons zero x nnil)
+          (insert_nil_eq x))
+        (allLeCons head zero x nnil p (allLeNil head))
+   | allLeCons k y ys h1 h2 [ih] =>
+      \(p:Le head x) =>
+      allLe_congr
+        head
+        (succ (succ k))
+        (match compare x y in Cmp x y bind L R
+         return NList (succ (succ k))
+         with
+         | cmpLe q => ncons (succ k) x (ncons k y ys)
+         | cmpGe q => ncons (succ k) y (insert x k ys)
+         end)
+        (insert x (succ k) (ncons k y ys))
+        (eqSym
+          (NList (succ (succ k)))
+          (insert x (succ k) (ncons k y ys))
+          (match compare x y in Cmp x y bind L R
+           return NList (succ (succ k))
+           with
+           | cmpLe q => ncons (succ k) x (ncons k y ys)
+           | cmpGe q => ncons (succ k) y (insert x k ys)
+           end)
+          (insert_cons_eq x k y ys))
+        (match compare x y as c in Cmp x y bind X Y
+         return AllLe
+           head
+           (succ (succ k))
+           (match c in Cmp X Y bind U V
+            return NList (succ (succ k))
+            with
+            | cmpLe q0 => ncons (succ k) x (ncons k y ys)
+            | cmpGe q0 => ncons (succ k) y (insert x k ys)
+            end)
+         with
+         | cmpLe q =>
+            allLeCons head (succ k) x (ncons k y ys) p
+              (allLeCons head k y ys h1 h2)
+         | cmpGe q =>
+            allLeCons head (succ k) y (insert x k ys) h1 (ih p)
+         end)
+   end)
+  hx
+};
+
+theorem insert_preserves_sorted (x:Nat) (n:Nat) (xs:NList n):
+  Sorted n xs -> Sorted (succ n) (insert x n xs) {
+  \(hs:Sorted n xs) =>
+  (match hs as s in Sorted n xs bind m ys
+   return Sorted (succ m) (insert x m ys)
+   with
+   | sortedNil =>
+      sorted_congr
+        (succ zero)
+        (ncons zero x nnil)
+        (insert x zero nnil)
+        (eqSym (NList (succ zero))
+          (insert x zero nnil)
+          (ncons zero x nnil)
+          (insert_nil_eq x))
+        (sortedCons zero x nnil (allLeNil x) sortedNil)
+   | sortedCons k y ys hy hys [ih] =>
+      sorted_congr
+        (succ (succ k))
+        (match compare x y in Cmp x y bind L R
+         return NList (succ (succ k))
+         with
+         | cmpLe q => ncons (succ k) x (ncons k y ys)
+         | cmpGe q => ncons (succ k) y (insert x k ys)
+         end)
+        (insert x (succ k) (ncons k y ys))
+        (eqSym
+          (NList (succ (succ k)))
+          (insert x (succ k) (ncons k y ys))
+          (match compare x y in Cmp x y bind L R
+           return NList (succ (succ k))
+           with
+           | cmpLe q => ncons (succ k) x (ncons k y ys)
+           | cmpGe q => ncons (succ k) y (insert x k ys)
+           end)
+          (insert_cons_eq x k y ys))
+        ((match compare x y as c in Cmp x y bind X Y
+          return
+            (Le X Y ->
+              Sorted
+                (succ (succ k))
+                (ncons (succ k) x (ncons k y ys))) ->
+            (Le Y X ->
+              Sorted
+                (succ (succ k))
+                (ncons (succ k) y (insert x k ys))) ->
+            Sorted
+              (succ (succ k))
+              (match c in Cmp X Y bind U V
+               return NList (succ (succ k))
+               with
+               | cmpLe q0 => ncons (succ k) x (ncons k y ys)
+               | cmpGe q0 => ncons (succ k) y (insert x k ys)
+               end)
+          with
+          | cmpLe q =>
+             \(fx:Le X Y ->
+               Sorted
+                 (succ (succ k))
+                 (ncons (succ k) x (ncons k y ys))) =>
+             \(gy:Le Y X ->
+               Sorted
+                 (succ (succ k))
+                 (ncons (succ k) y (insert x k ys))) =>
+             fx q
+          | cmpGe q =>
+             \(fx:Le X Y ->
+               Sorted
+                 (succ (succ k))
+                 (ncons (succ k) x (ncons k y ys))) =>
+             \(gy:Le Y X ->
+               Sorted
+                 (succ (succ k))
+                 (ncons (succ k) y (insert x k ys))) =>
+             gy q
+          end)
+         (\(q:Le x y) =>
+           sortedCons
+             (succ k)
+             x
+             (ncons k y ys)
+             (allLeCons x k y ys q (allLeTransLeft x y k ys q hy))
+             (sortedCons k y ys hy hys))
+         (\(q:Le y x) =>
+           sortedCons
+             (succ k)
+             y
+             (insert x k ys)
+             (allLeInsert y x k ys q hy)
+             ih))
+   end)
+};
+
+theorem insertionSort_sorted (n:Nat) (xs:NList n):
+  Sorted n (insertionSort n xs) {
+  match xs as s in NList n bind m
+  return Sorted m (insertionSort m s)
+  with
+  | nnil =>
+     sorted_congr
+       zero
+       nnil
+       (insertionSort zero nnil)
+       (eqSym (NList zero)
+         (insertionSort zero nnil)
+         nnil
+         insertionSort_nil_eq)
+       sortedNil
+  | ncons k y ys [ih] =>
+     sorted_congr
+       (succ k)
+       (insert y k (insertionSort k ys))
+       (insertionSort (succ k) (ncons k y ys))
+       (eqSym
+         (NList (succ k))
+         (insertionSort (succ k) (ncons k y ys))
+         (insert y k (insertionSort k ys))
+         (insertionSort_cons_eq k y ys))
+       (insert_preserves_sorted y k (insertionSort k ys) ih)
+  end
+};

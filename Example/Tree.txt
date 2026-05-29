@@ -1,0 +1,182 @@
+inductive Nat {
+  | zero: Nat
+  | succ: Nat -> Nat
+};
+
+inductive Empty {};
+
+inductive Eq (A:Type): A -> A -> Type {
+  | refl: (x:A) -> Eq A x x
+};
+
+fun eqSym (A:Type) (x:A) (y:A) (p:[A]x==y): [A]y==x {
+  match p as e in Eq A x y bind T rhs lhs
+  return [T]lhs==rhs
+  with
+  | refl z => refl T z
+  end
+};
+
+fun discrimNat (n:Nat): Type {
+  match n in Nat
+  return Type
+  with
+  | zero => Nat
+  | succ k [ih] => Empty
+  end
+};
+
+fun zeroNeSucc (k:Nat) (p:[Nat]zero==(succ k)): Empty {
+  (match p as e in Eq Nat zero (succ k) bind T lhs rhs
+   return (P:T -> Type) -> P lhs -> P rhs
+   with
+   | refl z => \(P:T -> Type) => \(px:P z) => px
+   end)
+  discrimNat
+  zero
+};
+
+fun succNeZero (k:Nat) (p:[Nat](succ k)==zero): Empty {
+  zeroNeSucc k (eqSym Nat (succ k) zero p)
+};
+
+inductive Fin : Nat -> Type {
+  | fzero: (n:Nat) -> Fin (succ n)
+  | fsucc: (n:Nat) -> Fin n -> Fin (succ n)
+};
+
+fun finZeroToEmpty (x:Fin zero): Empty {
+  (match x
+   in Fin zero bind n
+   return ([Nat]n==zero) -> Empty
+   with
+   | fzero k => \(p:[Nat](succ k)==zero) => succNeZero k p
+   | fsucc k p [ih] => \(q:[Nat](succ k)==zero) => succNeZero k q
+   end)
+  (refl Nat zero)
+};
+
+fun finZeroElim (P:Type) (x:Fin zero): P {
+  match (finZeroToEmpty x)
+  in Empty
+  return P
+  with
+  end
+};
+
+fun add (m:Nat) (n:Nat): Nat {
+  (match m in Nat
+   return Nat -> Nat
+   with
+   | zero => \(n:Nat) => n
+   | succ k [rec] => \(n:Nat) => succ (rec n)
+   end)
+  n
+};
+
+fun sumFin (n:Nat) (f:Fin n -> Nat): Nat {
+  (match n as k in Nat
+   return (Fin k -> Nat) -> Nat
+   with
+   | zero => \(f0:Fin zero -> Nat) => zero
+   | succ k [ih] => \(fs:Fin (succ k) -> Nat) =>
+      add
+        (fs (fzero k))
+        (ih (\(i:Fin k) => fs (fsucc k i)))
+   end)
+  f
+};
+
+# Tree stores the child count and an indexed child accessor.
+inductive Tree (A:Type) {
+  | leaf: A -> Tree A
+  | node: (k:Nat) ->
+        (Fin k -> Tree A) ->
+        Tree A
+};
+
+fun directChildren (A:Type) (t:Tree A): Nat {
+  match t
+  in Tree A bind T
+  return Nat
+  with
+  | leaf a => zero
+  | node k childAt [ihAt] => k
+  end
+};
+
+fun totalNodes (A:Type) (t:Tree A): Nat {
+  match t
+  in Tree A bind T
+  return Nat
+  with
+  | leaf a => succ zero
+  | node k childAt [ihAt] =>
+      succ (sumFin k (\(i:Fin k) => ihAt i))
+  end
+};
+
+var one : Nat = succ zero;
+var two : Nat = succ one;
+var three : Nat = succ two;
+var four : Nat = succ three;
+
+fun child1 (i:Fin one): Tree Nat {
+  match i in Fin one bind k
+  return Tree Nat
+  with
+  | fzero k => leaf Nat zero
+  | fsucc k p [ih] => ih
+  end
+};
+
+var tree1 : Tree Nat =
+  node Nat one child1;
+
+fun child2 (i:Fin two): Tree Nat {
+  match i in Fin two bind k
+  return Tree Nat
+  with
+  | fzero k => leaf Nat zero
+  | fsucc k p [ih] => leaf Nat zero
+  end
+};
+
+var tree2 : Tree Nat =
+  node Nat two child2;
+
+fun child3 (i:Fin three): Tree Nat {
+  match i in Fin three bind k
+  return Tree Nat
+  with
+  | fzero k => leaf Nat zero
+  | fsucc k p [ih] => leaf Nat zero
+  end
+};
+
+var tree3 : Tree Nat =
+  node Nat three child3;
+
+# root4 child direct-counts = [1,2,1,3]
+fun child4 (i:Fin four): Tree Nat {
+  match i in Fin four bind k
+  return Tree Nat
+  with
+  | fzero k => tree1
+  | fsucc k p [ih] => ih
+  end
+};
+
+var root4 : Tree Nat =
+  node Nat four child4;
+
+var idx40 : Fin four = fzero three;
+var idx41 : Fin four = fsucc three (fzero two);
+var idx42 : Fin four = fsucc three (fsucc two (fzero one));
+var idx43 : Fin four = fsucc three (fsucc two (fsucc one (fzero zero)));
+
+var outChildCount0 : Nat = directChildren Nat (child4 idx40);
+var outChildCount1 : Nat = directChildren Nat (child4 idx41);
+var outChildCount2 : Nat = directChildren Nat (child4 idx42);
+var outChildCount3 : Nat = directChildren Nat (child4 idx43);
+var outTotalNodes4 : Nat = totalNodes Nat root4;

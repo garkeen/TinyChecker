@@ -1,0 +1,23 @@
+inductive Empty {};
+
+inductive Bad {
+  | mk: (Bad -> Empty) -> Bad
+};
+
+fun unmk (b:Bad): Bad -> Empty {
+  Bad.elim
+    (\(x:Bad) => Bad -> Empty)
+    (\(f:Bad -> Empty) => f)
+    b
+};
+
+fun self (x:Bad): Empty {
+  unmk x x
+};
+
+var omega : Bad = mk self;
+var boom  : Empty = self omega;
+
+fun explode (A:Type): A {
+  Empty.elim (\(e:Empty) => A) boom
+};

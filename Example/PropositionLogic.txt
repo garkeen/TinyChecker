@@ -1,0 +1,236 @@
+# ⊥ is bottom. Negation is encoded as P → ⊥.
+inductive Empty {};
+
+# ⊤ is top.
+inductive Unit {
+  | unit: Unit
+};
+
+# Disjunction.
+inductive Or (P:Type) (Q:Type) {
+  | inl: P -> Or P Q
+  | inr: Q -> Or P Q
+};
+
+# Conjunction.
+inductive And (P:Type) (Q:Type) {
+  | comb: P -> Q -> And P Q
+};
+
+# Ex falso: ⊥ → P.
+theorem exfalso (P:Type) (e:Empty): P {
+  match e
+  in Empty
+  return P
+  with
+  end
+};
+
+# Disjunctive syllogism: P ∨ Q, (P → ⊥) |- Q.
+theorem disjSyll (P:Type) (Q:Type) (pq:Or P Q) (notP:P -> Empty): Q {
+  (match pq
+   in Or P Q bind X Y
+   return (X -> Empty) -> Y
+   with
+   | inl p => \(np:X -> Empty) => exfalso Y (np p)
+   | inr q => \(np:X -> Empty) => q
+   end)
+  notP
+};
+
+# And elimination: A ∧ B → A.
+theorem andLeft (A:Type) (B:Type) (ab:And A B): A {
+  match ab
+  in And A B bind X Y
+  return X
+  with
+  | comb x y => x
+  end
+};
+
+# And elimination: A ∧ B → B.
+theorem andRight (A:Type) (B:Type) (ab:And A B): B {
+  match ab
+  in And A B bind X Y
+  return Y
+  with
+  | comb x y => y
+  end
+};
+
+# Implication transitivity: (A → B) → (B → C) → A → C.
+theorem impTrans (A:Type) (B:Type) (C:Type) (ab:A -> B) (bc:B -> C) (a:A): C {
+  bc (ab a)
+};
+
+# Double-negation introduction: P → ¬¬P.
+theorem doubleNegIntro (P:Type) (p:P): (P -> Empty) -> Empty {
+  \(notP:P -> Empty) => notP p
+};
+
+# Generic non-dependent elimination for Or.
+theorem orElim (P:Type) (Q:Type) (R:Type) (pq:Or P Q) (f:P -> R) (g:Q -> R): R {
+  (match pq
+   in Or P Q bind X Y
+   return (X -> R) -> (Y -> R) -> R
+   with
+   | inl x => \(fx:X -> R) => \(gy:Y -> R) => fx x
+   | inr y => \(fx:X -> R) => \(gy:Y -> R) => gy y
+   end)
+  f
+  g
+};
+
+# A ∧ (B ∧ C) → (A ∧ B) ∧ C.
+theorem andAssocToRight (A:Type) (B:Type) (C:Type) (h:And A (And B C)): And (And A B) C {
+  comb
+    (And A B)
+    C
+    (comb
+      A
+      B
+      (andLeft A (And B C) h)
+      (andLeft B C (andRight A (And B C) h)))
+    (andRight B C (andRight A (And B C) h))
+};
+
+# (A ∧ B) ∧ C → A ∧ (B ∧ C).
+theorem andAssocToLeft (A:Type) (B:Type) (C:Type) (h:And (And A B) C): And A (And B C) {
+  comb
+    A
+    (And B C)
+    (andLeft A B (andLeft (And A B) C h))
+    (comb
+      B
+      C
+      (andRight A B (andLeft (And A B) C h))
+      (andRight (And A B) C h))
+};
+
+# A ∨ (B ∨ C) → (A ∨ B) ∨ C.
+theorem orAssocToRight (A:Type) (B:Type) (C:Type) (h:Or A (Or B C)): Or (Or A B) C {
+  orElim
+    A
+    (Or B C)
+    (Or (Or A B) C)
+    h
+    (\(a:A) => inl (Or A B) C (inl A B a))
+    (\(bc:Or B C) =>
+      orElim
+        B
+        C
+        (Or (Or A B) C)
+        bc
+        (\(b:B) => inl (Or A B) C (inr A B b))
+        (\(c:C) => inr (Or A B) C c))
+};
+
+# (A ∨ B) ∨ C → A ∨ (B ∨ C).
+theorem orAssocToLeft (A:Type) (B:Type) (C:Type) (h:Or (Or A B) C): Or A (Or B C) {
+  orElim
+    (Or A B)
+    C
+    (Or A (Or B C))
+    h
+    (\(ab:Or A B) =>
+      orElim
+        A
+        B
+        (Or A (Or B C))
+        ab
+        (\(a:A) => inl A (Or B C) a)
+        (\(b:B) => inr A (Or B C) (inl B C b)))
+    (\(c:C) => inr A (Or B C) (inr B C c))
+};
+
+# (A ∧ B) ∨ (A ∧ C) → A ∧ (B ∨ C).
+theorem andDistribOrToRight (A:Type) (B:Type) (C:Type) (h:Or (And A B) (And A C)): And A (Or B C) {
+  orElim
+    (And A B)
+    (And A C)
+    (And A (Or B C))
+    h
+    (\(ab:And A B) =>
+      comb A (Or B C)
+        (andLeft A B ab)
+        (inl B C (andRight A B ab)))
+    (\(ac:And A C) =>
+      comb A (Or B C)
+        (andLeft A C ac)
+        (inr B C (andRight A C ac)))
+};
+
+# A ∧ (B ∨ C) → (A ∧ B) ∨ (A ∧ C).
+theorem andDistribOrToLeft (A:Type) (B:Type) (C:Type) (h:And A (Or B C)): Or (And A B) (And A C) {
+  orElim
+    B
+    C
+    (Or (And A B) (And A C))
+    (andRight A (Or B C) h)
+    (\(b:B) => inl (And A B) (And A C) (comb A B (andLeft A (Or B C) h) b))
+    (\(c:C) => inr (And A B) (And A C) (comb A C (andLeft A (Or B C) h) c))
+};
+
+# Provable direction of ((A ∨ B) ∧ (¬A ∨ B)) ↔ B: B → ((A ∨ B) ∧ (¬A ∨ B)).
+theorem bToClause (A:Type) (B:Type) (b:B): And (Or A B) (Or (A -> Empty) B) {
+  comb
+    (Or A B)
+    (Or (A -> Empty) B)
+    (inr A B b)
+    (inr (A -> Empty) B b)
+};
+
+# Provable direction of ((A ∨ C) ∧ (B ∨ C)) ↔ ((A ∧ B) ∨ C):
+# ((A ∧ B) ∨ C) → ((A ∨ C) ∧ (B ∨ C)).
+theorem pairOrToConjOr (A:Type) (B:Type) (C:Type) (h:Or (And A B) C): And (Or A C) (Or B C) {
+  orElim
+    (And A B)
+    C
+    (And (Or A C) (Or B C))
+    h
+    (\(ab:And A B) =>
+      comb
+        (Or A C)
+        (Or B C)
+        (inl A C (andLeft A B ab))
+        (inl B C (andRight A B ab)))
+    (\(c:C) =>
+      comb
+        (Or A C)
+        (Or B C)
+        (inr A C c)
+        (inr B C c))
+};
+
+# A → (B → A).
+theorem impK (A:Type) (B:Type) (a:A): B -> A {
+  \(b:B) => a
+};
+
+# ¬¬¬A → ¬A.
+theorem tripleNegToNeg (A:Type) (nnnA:((A -> Empty) -> Empty) -> Empty) (a:A): Empty {
+  nnnA (\(na:A -> Empty) => na a)
+};
+
+# (A → B) → (¬B → ¬A).
+theorem contraposition (A:Type) (B:Type) (ab:A -> B) (notB:B -> Empty) (a:A): Empty {
+  notB (ab a)
+};
+
+# ¬¬(A ∨ ¬A).
+theorem notNotExcludedMiddle (A:Type) (k:(Or A (A -> Empty)) -> Empty): Empty {
+  k (inr A (A -> Empty) (\(a:A) => k (inl A (A -> Empty) a)))
+};
+
+
+# Concrete checks for normalization tests.
+claim notEmptyId: Empty -> Empty = \(e:Empty) => e;
+claim pqEx: Or Empty Unit = inr Empty Unit unit;
+claim outDisj: Unit = disjSyll Empty Unit pqEx notEmptyId;
+
+claim andEx: And Unit Unit = comb Unit Unit unit unit;
+claim outLeft: Unit = andLeft Unit Unit andEx;
+claim outRight: Unit = andRight Unit Unit andEx;
+
+claim idUnit: Unit -> Unit = \(x:Unit) => x;
+claim outTrans: Unit = impTrans Unit Unit Unit idUnit idUnit unit;

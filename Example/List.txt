@@ -1,0 +1,65 @@
+# Minimal Nat and equality definitions used by List proofs.
+inductive Nat
+{
+  | zero: Nat
+  | succ: Nat -> Nat
+};
+
+inductive Eq (A:Type): A -> A -> Type
+{
+  | refl: (x:A) -> Eq A x x
+};
+
+theorem eqCong (A:Type) (x:A) (y:A) (p:[A]x==y) (B:Type) (f:A -> B): [B](f x)==(f y)
+{
+  (match p as e in Eq A x y bind T lhs rhs
+   return (R:Type) -> (g:T -> R) -> [R](g lhs)==(g rhs) with
+   | refl z => \(R:Type) => \(g:T -> R) => refl R (g z)
+   end)
+  B
+  f
+};
+
+theorem eqCongSucc (x:Nat) (y:Nat) (p:[Nat]x==y): [Nat](succ x)==(succ y)
+{
+  eqCong Nat x y p Nat (\(n:Nat) => succ n)
+};
+
+# Indexed lists: List A n means list length is n.
+inductive List (A:Type): Nat -> Type {
+  | nil: List A zero
+  | cons: (k:Nat) -> A -> List A k -> List A (succ k)
+};
+
+# Compute length by recursion through match sugar.
+fun ListLength (A:Type) (n:Nat) (L:List A n): Nat
+{
+  match L in List A n bind T k
+  return Nat with
+  | nil => zero
+  | cons k a xs [ih] => succ ih
+  end
+};
+
+# Main theorem:
+# (A:Type) -> (n:Nat) -> (L:List A n) -> [Nat]n==(ListLength A n L)
+theorem ListLengthSound (A:Type) (n:Nat) (L:List A n): [Nat]n==(ListLength A n L)
+{
+  match L as xs0 in List A n bind T k
+  return [Nat]k==(ListLength T k xs0) with
+  | nil => refl Nat zero
+  | cons k a xs [ih] => eqCongSucc k (ListLength T k xs) ih
+  end
+};
+
+# Small concrete example for normalization tests.
+inductive Unit
+{
+  | unit: Unit
+};
+
+var one: Nat = succ zero;
+var two: Nat = succ one;
+var exList: List Unit two = cons Unit one unit (cons Unit zero unit (nil Unit));
+var exLen: Nat = ListLength Unit two exList;
+claim exLenSound: [Nat]two==exLen = ListLengthSound Unit two exList;
