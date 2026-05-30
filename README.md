@@ -58,4 +58,4 @@ theorem addComm (m:Nat) (n:Nat): [Nat](add m n)==(add n m) {
 | `Implementation/` | 解释器核心实现 |
 | `Example/` | 示例程序（Nat, List, Tree 等） |
 | `Test/` | 测试用例 |
-| `Doc/` | 设计文档 |
+| `Specific/` | 设计文档 |
