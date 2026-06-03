@@ -23,14 +23,14 @@ from PySide6.QtWidgets import (
 
 if __package__ is None or __package__ == "":
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from Implementation.gui_support import GapFocus, GuiAnalysis, TokenFocus, analyze_source, show_expr
-    from Implementation.gui_highlighter import TinyCheckerHighlighter
-    from Implementation.core import CDefinition, CGlobal
-    from Implementation.errors import ElabError, ParseError, TinyCheckerError, TypeCheckError
-    from Implementation.pipeline import run_pipeline_detailed
-    from Implementation.pretty import show_term
-    from Implementation.proof_visualizer import ProofTreeBuilder, theorem_param_counts_from_decls
-    from Implementation.reducer import Reducer
+    from Codes.gui_support import GapFocus, GuiAnalysis, TokenFocus, analyze_source, show_expr
+    from Codes.gui_highlighter import TinyCheckerHighlighter
+    from Codes.core import CDefinition, CGlobal
+    from Codes.errors import ElabError, ParseError, TinyCheckerError, TypeCheckError
+    from Codes.pipeline import run_pipeline_detailed
+    from Codes.pretty import show_term
+    from Codes.proof_visualizer import ProofTreeBuilder, theorem_param_counts_from_decls
+    from Codes.reducer import Reducer
 else:
     from .gui_support import GapFocus, GuiAnalysis, TokenFocus, analyze_source, show_expr
     from .gui_highlighter import TinyCheckerHighlighter

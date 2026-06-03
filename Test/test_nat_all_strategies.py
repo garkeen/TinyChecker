@@ -12,12 +12,12 @@ import time
 import unittest
 from pathlib import Path
 
-from Implementation.core import CDefinition
-from Implementation.elaborator import elaborate_result
-from Implementation.lexer import tokenize
-from Implementation.parser import parse
-from Implementation.reducer import ConvStrategy
-from Implementation.typechecker import check_program
+from Codes.core import CDefinition
+from Codes.elaborator import elaborate_result
+from Codes.lexer import tokenize
+from Codes.parser import parse
+from Codes.reducer import ConvStrategy
+from Codes.typechecker import check_program
 
 ROOT = Path(__file__).resolve().parent.parent
 NAT_PATH = ROOT / "Example" / "Nat.txt"

@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from Implementation.elaborator import elaborate_result
-from Implementation.errors import ElabError, LexError, ParseError, ReducerError, TypeCheckError
-from Implementation.lexer import tokenize
-from Implementation.parser import Parser, parse
-from Implementation.pipeline import check_file
-from Implementation.reducer import ConvStrategy
-from Implementation.typechecker import check_program
+from Codes.elaborator import elaborate_result
+from Codes.errors import ElabError, LexError, ParseError, ReducerError, TypeCheckError
+from Codes.lexer import tokenize
+from Codes.parser import Parser, parse
+from Codes.pipeline import check_file
+from Codes.reducer import ConvStrategy
+from Codes.typechecker import check_program
 
 
 ROOT = Path(__file__).resolve().parent.parent

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from Implementation.restricted import RDefinition
+from Codes.restricted import RDefinition
 
 from Test.support import ROOT, check_file, elaborate_program
 

@@ -171,6 +171,13 @@ def substitute_expr(
     fresh_name: Callable[[str], str],
     allocator: Callable[[], int],
 ) -> Expr:
+    """Capture-avoiding substitution: replace free occurrences of names in *mapping*.
+
+    For binders (Pi / Lambda) the bound name is removed from the mapping
+    before recursing into the body.  If the bound name appears in the free
+    variables of any value still in the mapping, it is alpha-renamed to a
+    fresh name to avoid capture.
+    """
     if not mapping:
         return expr
     if isinstance(expr, AtomExpr):

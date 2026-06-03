@@ -3,7 +3,7 @@
 import sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
-from Implementation.pipeline import run_pipeline
+from Codes.pipeline import run_pipeline
 
 PASS = 0
 FAIL = 0

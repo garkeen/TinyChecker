@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from Implementation.surface import ArrowExpr, EqExpr
+from Codes.surface import ArrowExpr, EqExpr
 
 from Test.support import parse_single_expr, typecheck_source
 
