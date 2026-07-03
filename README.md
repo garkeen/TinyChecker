@@ -4,7 +4,57 @@
 
 ---
 
-A dependently-typed language type checker and proof assistant for the **Pind** (Pi + Inductive) language.
+A dependently-typed language type checker and proof assistant for the **Pind** (Pi + Inductive) language, with both Python and C implementations.
+
+## Project Structure
+
+```
+TinyChecker/
+├── Python/            # Python implementation
+│   ├── core.py        # Core term representation
+│   ├── core_ops.py    # De Bruijn operations (shift, subst, instantiate)
+│   ├── surface.py     # Surface syntax (AST)
+│   ├── lexer.py       # Tokenizer
+│   ├── parser.py      # Parser
+│   ├── elaborator.py  # Elaboration (surface → restricted)
+│   ├── restricted.py  # Restricted expressions → core terms
+│   ├── reducer.py     # Reduction engine (beta, iota, delta)
+│   ├── typechecker.py # Bidirectional type checker
+│   ├── pipeline.py    # End-to-end pipeline
+│   ├── pretty.py      # Pretty printer
+│   ├── runtime.py     # Runtime global context
+│   ├── errors.py      # Error types
+│   ├── cli.py         # Command-line interface
+│   ├── gui.py         # GUI (PySide6)
+│   └── Test/          # Python tests
+├── C/                 # C implementation (semantically aligned with Python)
+│   ├── term.h/c       # Core term (de Bruijn)
+│   ├── core_ops.h/c   # shift, subst, instantiate
+│   ├── surface.h/c    # Surface AST
+│   ├── lexer.h/c      # Tokenizer
+│   ├── parser.h/c     # Parser
+│   ├── elaborator.h/c # Elaboration
+│   ├── restricted.h/c # Restricted → core conversion
+│   ├── reducer.h/c    # Reduction engine
+│   ├── typechecker.h/c# Type checker
+│   ├── pipeline.h/c   # End-to-end pipeline
+│   ├── runtime.h/c    # Global context
+│   ├── context.h/c    # Typing context
+│   ├── pretty.h/c     # Pretty printer
+│   ├── cdecl.h/c      # Core declaration types
+│   ├── Makefile        # Build system
+│   └── Test/          # C tests
+├── Example/           # Example Pind programs
+│   ├── Nat.pind       # Natural numbers, arithmetic proofs
+│   ├── List.pind      # Lists, length proofs
+│   ├── Tree.pind      # Binary trees, Fin type
+│   ├── Sort.pind      # Insertion sort, sorted proofs
+│   ├── FirstOrderlogic.pind       # First-order logic
+│   ├── FirstOrderlogic_advanced.pind # Advanced FOL
+│   ├── PropositionLogic.pind      # Propositional logic
+│   └── ExistsNested.pind          # Nested existentials
+└── spec/              # Language specification
+```
 
 ## Features
 
@@ -21,15 +71,25 @@ A dependently-typed language type checker and proof assistant for the **Pind** (
 
 ## Quick Start
 
+### Python
+
 ```bash
 # Type check a file
-python -m Codes.cli Example/Nat.pind
+python -m Python.cli Example/Nat.pind
 
 # Compute normal form
-python -m Codes.cli Example/Nat.pind --nf addComm
+python -m Python.cli Example/Nat.pind --nf addComm
 
 # Launch GUI
-python -m Codes.gui Example/Nat.pind
+python -m Python.gui Example/Nat.pind
+```
+
+### C
+
+```bash
+cd C
+make tests
+./Test/test_pipeline
 ```
 
 ## Example
@@ -66,22 +126,37 @@ theorem addZeroRight (n:Nat): [Nat](add n zero)==n {
 
 ## Specification
 
-See [Spec/](Spec/) for the Pind language specification:
+See [spec/](spec/) for the Pind language specification:
 
 | Document | Description |
 |----------|-------------|
-| [overview.md](Spec/overview.md) | System goals, supported features, limitations |
-| [syntax.md](Spec/syntax.md) | Lexical and grammatical specification (EBNF) |
-| [types.md](Spec/types.md) | Type system, reduction rules, definitional equality |
-| [modules.md](Spec/modules.md) | Module responsibilities and data flow |
-| [api.md](Spec/api.md) | CLI and Python API interface |
-| [errors.md](Spec/errors.md) | Error types and reporting |
+| [overview.md](spec/overview.md) | System goals, supported features, limitations |
+| [syntax.md](spec/syntax.md) | Lexical and grammatical specification (EBNF) |
+| [types.md](spec/types.md) | Type system, reduction rules, definitional equality |
+| [modules.md](spec/modules.md) | Module responsibilities and data flow |
+| [api.md](spec/api.md) | CLI and Python API interface |
+| [errors.md](spec/errors.md) | Error types and reporting |
 
 ---
 
 # 中文
 
-一个依赖类型检查器和证明辅助工具，用于 **Pind**（Pi + Inductive）语言。
+一个依赖类型检查器和证明辅助工具，用于 **Pind**（Pi + Inductive）语言，包含 Python 和 C 两种实现。
+
+## 项目结构
+
+```
+TinyChecker/
+├── Python/            # Python 实现
+│   ├── *.py           # 核心模块
+│   └── Test/          # Python 测试
+├── C/                 # C 实现（与 Python 语义对齐）
+│   ├── *.h/c          # 核心模块
+│   ├── Makefile       # 构建系统
+│   └── Test/          # C 测试
+├── Example/           # Pind 示例程序
+└── spec/              # 语言规范
+```
 
 ## 特性
 
@@ -98,15 +173,25 @@ See [Spec/](Spec/) for the Pind language specification:
 
 ## 快速开始
 
+### Python
+
 ```bash
 # 类型检查文件
-python -m Codes.cli Example/Nat.pind
+python -m Python.cli Example/Nat.pind
 
 # 计算范式
-python -m Codes.cli Example/Nat.pind --nf addComm
+python -m Python.cli Example/Nat.pind --nf addComm
 
 # 启动 GUI
-python -m Codes.gui Example/Nat.pind
+python -m Python.gui Example/Nat.pind
+```
+
+### C
+
+```bash
+cd C
+make tests
+./Test/test_pipeline
 ```
 
 ## 示例
@@ -143,13 +228,13 @@ theorem addZeroRight (n:Nat): [Nat](add n zero)==n {
 
 ## 规范文档
 
-详见 [Spec/](Spec/) 目录下的 Pind 语言规范：
+详见 [spec/](spec/) 目录下的 Pind 语言规范：
 
 | 文档 | 描述 |
 |------|------|
-| [overview.md](Spec/overview.md) | 系统目标、支持的特性、限制 |
-| [syntax.md](Spec/syntax.md) | 词法和语法规范（EBNF） |
-| [types.md](Spec/types.md) | 类型系统、归约规则、定义相等性 |
-| [modules.md](Spec/modules.md) | 模块职责和数据流 |
-| [api.md](Spec/api.md) | CLI 和 Python API 接口 |
-| [errors.md](Spec/errors.md) | 错误类型和报告 |
+| [overview.md](spec/overview.md) | 系统目标、支持的特性、限制 |
+| [syntax.md](spec/syntax.md) | 词法和语法规范（EBNF） |
+| [types.md](spec/types.md) | 类型系统、归约规则、定义相等性 |
+| [modules.md](spec/modules.md) | 模块职责和数据流 |
+| [api.md](spec/api.md) | CLI 和 Python API 接口 |
+| [errors.md](spec/errors.md) | 错误类型和报告 |

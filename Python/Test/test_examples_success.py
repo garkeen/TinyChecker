@@ -10,19 +10,19 @@ from Test.support import ROOT, check_file, elaborate_program
 class ExampleProgramsSuccessTests(unittest.TestCase):
     def test_main_examples_typecheck(self) -> None:
         for name in [
-            "Nat.txt",
-            "List.txt",
-            "Tree.txt",
-            "Sort.txt",
-            "PropositionLogic.txt",
-            "FirstOrderlogic.txt",
+            "Nat.pind",
+            "List.pind",
+            "Tree.pind",
+            "Sort.pind",
+            "PropositionLogic.pind",
+            "FirstOrderlogic.pind",
         ]:
             with self.subTest(example=name):
                 _, _, _, global_ctx = check_file(ROOT / "Example" / name)
                 self.assertGreater(len(global_ctx.globals), 0)
 
     def test_first_order_logic_registers_sum_and_product_kinds(self) -> None:
-        _, _, _, global_ctx = check_file(ROOT / "Example" / "FirstOrderlogic.txt")
+        _, _, _, global_ctx = check_file(ROOT / "Example" / "FirstOrderlogic.pind")
         self.assertEqual(global_ctx.inductives["Flag"].kind, "sum")
         self.assertEqual(global_ctx.inductives["ExistsUnit"].kind, "product")
 
@@ -38,7 +38,7 @@ example : Type = Type;
         self.assertEqual([decl.kind for decl in defs], ["var", "var", "var"])
 
     def test_first_order_logic_projection_example_has_expected_global_names(self) -> None:
-        _, _, _, global_ctx = check_file(ROOT / "Example" / "FirstOrderlogic.txt")
+        _, _, _, global_ctx = check_file(ROOT / "Example" / "FirstOrderlogic.pind")
         self.assertIn("ExistsUnit.A", global_ctx.globals)
         self.assertIn("ExistsUnit.x", global_ctx.globals)
         self.assertEqual(global_ctx.globals["ExistsUnit.A"].kind, "projection")

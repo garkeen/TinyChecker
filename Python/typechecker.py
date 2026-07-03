@@ -25,13 +25,21 @@ from .runtime import ConstructorInfo, EliminatorInfo, GlobalEntry, InductiveInfo
 
 
 @dataclass
+class CtxLink:
+    ty: CTerm
+    name: Optional[str]
+    tail: Optional[CtxLink]
+
+
 class TcContext:
-    types: list[CTerm] = field(default_factory=list)
-    names: list[Optional[str]] = field(default_factory=list)
+    __slots__ = ['head', '_depth']
+    def __init__(self, head: Optional[CtxLink] = None, depth: int = 0):
+        self.head = head
+        self._depth = depth
 
 
 def extend_context(ctx: TcContext, name: Optional[str], ty: CTerm) -> TcContext:
-    return TcContext([ty] + ctx.types, [name] + ctx.names)
+    return TcContext(CtxLink(ty, name, ctx.head), ctx._depth + 1)
 
 
 class TypeChecker:
@@ -119,9 +127,12 @@ class TypeChecker:
         return Reducer(self.global_ctx, conv_strategy=self.conv_strategy)
 
     def lookup_var(self, ctx: TcContext, index: int) -> CTerm:
-        if index < 0 or index >= len(ctx.types):
+        if index < 0 or index >= ctx._depth:
             raise TypeCheckError(f"unbound de Bruijn variable: {index}")
-        return shift(ctx.types[index], index + 1)
+        node = ctx.head
+        for _ in range(index):
+            node = node.tail
+        return shift(node.ty, index + 1)
 
     def infer(self, term: CTerm, ctx: TcContext) -> CTerm:
         if isinstance(term, CType):

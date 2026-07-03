@@ -1,4 +1,4 @@
-"""Manual test: run Example/Nat.txt with all three conversion strategies.
+"""Manual test: run Example/Nat.pind with all three conversion strategies.
 
 Usage:
     python -m Test.test_nat_all_strategies
@@ -20,7 +20,7 @@ from Codes.reducer import ConvStrategy
 from Codes.typechecker import check_program
 
 ROOT = Path(__file__).resolve().parent.parent
-NAT_PATH = ROOT / "Example" / "Nat.txt"
+NAT_PATH = ROOT / "Example" / "Nat.pind"
 
 
 def run_nat(strategy: ConvStrategy) -> dict:
@@ -83,7 +83,7 @@ class NatAllStrategiesTest(unittest.TestCase):
         # Emit comparison table (use utf-8 wrapper so checkmark survives)
         out = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
         out.write("\n" + "=" * 60 + "\n")
-        out.write("Nat.txt -- 3-strategy comparison\n")
+        out.write("Nat.pind -- 3-strategy comparison\n")
         out.write("=" * 60 + "\n")
         for name, r in results.items():
             out.write(f"\n  [{name}]\n")

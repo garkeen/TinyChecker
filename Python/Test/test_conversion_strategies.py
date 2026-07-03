@@ -27,7 +27,7 @@ claim keep : Nat = idNat zero;
     def test_example_file_accepts_all_strategies(self) -> None:
         for strategy in ["greedy", "whnf", "whnfv2"]:
             with self.subTest(strategy=strategy):
-                _, _, _, global_ctx = check_file(ROOT / "Example" / "Nat.txt", conv_strategy=strategy)
+                _, _, _, global_ctx = check_file(ROOT / "Example" / "Nat.pind", conv_strategy=strategy)
                 self.assertIn("Nat", global_ctx.globals)
 
 

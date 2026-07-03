@@ -2,3 +2,4 @@ Thesis/
 **/__pycache__/
 *.pyc
 Doc/
+*.exe
