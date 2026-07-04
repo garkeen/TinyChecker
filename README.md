@@ -53,7 +53,7 @@ TinyChecker/
 │   ├── FirstOrderlogic_advanced.pind # Advanced FOL
 │   ├── PropositionLogic.pind      # Propositional logic
 │   └── ExistsNested.pind          # Nested existentials
-└── spec/              # Language specification
+└── Manual/            # Language manual and specification
 ```
 
 ## Features
@@ -124,18 +124,18 @@ theorem addZeroRight (n:Nat): [Nat](add n zero)==n {
 };
 ```
 
-## Specification
+## Manual
 
-See [spec/](spec/) for the Pind language specification:
+See [Manual/](Manual/) for the Pind language manual:
 
 | Document | Description |
 |----------|-------------|
-| [overview.md](spec/overview.md) | System goals, supported features, limitations |
-| [syntax.md](spec/syntax.md) | Lexical and grammatical specification (EBNF) |
-| [types.md](spec/types.md) | Type system, reduction rules, definitional equality |
-| [modules.md](spec/modules.md) | Module responsibilities and data flow |
-| [api.md](spec/api.md) | CLI and Python API interface |
-| [errors.md](spec/errors.md) | Error types and reporting |
+| [overview.md](Manual/overview.md) | System overview, core concepts, quick start |
+| [syntax.md](Manual/syntax.md) | Complete syntax specification (EBNF) |
+| [types.md](Manual/types.md) | Type system, reduction rules, definitional equality |
+| [modules.md](Manual/modules.md) | Implementation architecture, module responsibilities |
+| [api.md](Manual/api.md) | CLI and Python/C API reference |
+| [errors.md](Manual/errors.md) | Error types and debugging guide |
 
 ---
 
@@ -155,7 +155,7 @@ TinyChecker/
 │   ├── Makefile       # 构建系统
 │   └── Test/          # C 测试
 ├── Example/           # Pind 示例程序
-└── spec/              # 语言规范
+└── Manual/            # 语言手册和规范
 ```
 
 ## 特性
@@ -226,15 +226,15 @@ theorem addZeroRight (n:Nat): [Nat](add n zero)==n {
 };
 ```
 
-## 规范文档
+## 手册
 
-详见 [spec/](spec/) 目录下的 Pind 语言规范：
+详见 [Manual/](Manual/) 目录下的 Pind 语言手册：
 
 | 文档 | 描述 |
 |------|------|
-| [overview.md](spec/overview.md) | 系统目标、支持的特性、限制 |
-| [syntax.md](spec/syntax.md) | 词法和语法规范（EBNF） |
-| [types.md](spec/types.md) | 类型系统、归约规则、定义相等性 |
-| [modules.md](spec/modules.md) | 模块职责和数据流 |
-| [api.md](spec/api.md) | CLI 和 Python API 接口 |
-| [errors.md](spec/errors.md) | 错误类型和报告 |
+| [overview.md](Manual/overview.md) | 系统概述、核心概念、快速开始 |
+| [syntax.md](Manual/syntax.md) | 完整语法规范（EBNF） |
+| [types.md](Manual/types.md) | 类型系统、归约规则、定义相等性 |
+| [modules.md](Manual/modules.md) | 实现架构、模块职责 |
+| [api.md](Manual/api.md) | CLI 和 Python/C API 参考 |
+| [errors.md](Manual/errors.md) | 错误类型和调试指南 |

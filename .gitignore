@@ -3,3 +3,4 @@ Thesis/
 *.pyc
 Doc/
 *.exe
+*.o

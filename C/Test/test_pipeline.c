@@ -6,14 +6,14 @@ int main(void) {
     printf("=== Pipeline Test ===\n\n");
     
     const char* files[] = {
-        "../../Example/Nat.pind",
-        "../../Example/List.pind",
-        "../../Example/Tree.pind",
-        "../../Example/Sort.pind",
-        "../../Example/FirstOrderlogic.pind",
-        "../../Example/FirstOrderlogic_advanced.pind",
-        "../../Example/PropositionLogic.pind",
-        "../../Example/ExistsNested.pind",
+        "../Example/Nat.pind",
+        "../Example/List.pind",
+        "../Example/Tree.pind",
+        "../Example/Sort.pind",
+        "../Example/FirstOrderlogic.pind",
+        "../Example/FirstOrderlogic_advanced.pind",
+        "../Example/PropositionLogic.pind",
+        "../Example/ExistsNested.pind",
     };
     int num_files = sizeof(files) / sizeof(files[0]);
     
