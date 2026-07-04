@@ -2,7 +2,7 @@ Notice:This is just a toy-style prototype test, referencing Coq/Lean.
 
 注意：这只是一个玩具形式的原型测试，参考coq/lean。
 
-# TinyChecker
+# Pind
 
 **English** | [中文](#中文)
 
