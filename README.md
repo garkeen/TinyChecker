@@ -1,3 +1,7 @@
+Notice:This is just a toy-style prototype test, referencing Coq/Lean.
+
+注意：这只是一个玩具形式的原型测试，参考coq/lean。
+
 # TinyChecker
 
 **English** | [中文](#中文)
@@ -5,6 +9,7 @@
 ---
 
 A dependently-typed language type checker and proof assistant for the **Pind** (Pi + Inductive) language, with both Python and C implementations.
+
 
 ## Project Structure
 
